@@ -1,0 +1,29 @@
+
+\begin{tikzpicture}
+\begin{axis}[clip mode=individual, date coordinates in=x,
+    xticklabel=\month-\shortyear{\year},ymode=log, xlabel={Date (MM-YY)},     ylabel={%ylabel%},title={%title%},
+    log basis y={10}, ymin=0, ymax=%max%, 
+x label style={
+    at={(0.5,-.07)},
+    anchor=south,
+}, y label style={
+    at={(.03,0)},
+    anchor=west,
+}, title style={at={(0.5,1.06)},anchor=north,},
+scatter/use mapped color={
+            draw=mapped color,
+            fill=mapped color!70,
+        }, colorbar, point meta= explicit,
+    colorbar style={
+        title={%colorbartitle%},
+        %extracolorbar%
+        },
+%extraaxisoptions%
+]
+\addplot[scatter,opacity=0.5] coordinates { %coords% };
+\addplot[mark=none, black, line width=2pt] coordinates { %macoords% };
+\addplot[mark=none, orange, dashed, line width=3pt] coordinates { %cumcoords% };
+\end{axis}
+%extra%
+\end{tikzpicture}
+

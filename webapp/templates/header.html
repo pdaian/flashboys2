@@ -1,0 +1,66 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>frontrun me!</title>
+  <meta name="description" content="frontrun me">
+  <meta name="author" content="SitePoint">
+
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/jquery-3.3.1.min.js" type="text/javascript"></script>
+  <script type="text/javascript">
+    function doBlink() {
+    $("#under").fadeOut(300);
+    $("#under").fadeIn(300);
+    }
+
+    doBlink();  
+    setInterval(doBlink, 3000);
+  </script>
+
+  <!-- Plotly.js -->
+   <script src="/static/plotly-latest.min.js"></script>
+
+
+<!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="/static/vendor/bootstrap/css/bootstrap.min.css">
+<!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="/static/fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+<!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="/static/vendor/animate/animate.css">
+<!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="/static/vendor/select2/select2.min.css">
+<!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="/static/vendor/perfect-scrollbar/perfect-scrollbar.css">
+<!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="/static/css/util.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css">
+<!--===============================================================================================-->
+
+</head>
+
+<body>
+
+<div id="top">
+    <a href="/"><img id="logo" src="/static/logo.jpg" /></a>
+
+    <div id="header">Frontrun<div id="under" style="color: lightgrey; display:inline;">_</div>Me</div>
+</div>
+
+ <div class="alert">
+  <span class="closebtn" onclick="this.parentElement.style.display='none';">&times;</span>
+    Welcome to <b>frontrun me</b>, the premier site for visualizing Ethereum <i>gas auctions</i>.  These gas auctions
+    are often bids by frontrunners, arbitrageurs, and other programmatic network actors that seek to exploit inefficiencies in on-chain systems,
+    ultimately profiting miners.  On this site, we monitor these behaviors on the network in real-time as these bots compete for block priority
+    in rapid-fire <a href="https://en.wikipedia.org/wiki/All-pay_auction">all-pay auctions</a>*, showing users and mechanism designers the potential 
+    rent-seeking economy created by orderbook inefficiencies on-chain.  Timing data is sourced from a global network of
+    8 nodes peered deeply with Ethereum. {% if deanon %}<b><a href="https://pdaian.com/flashboys2.pdf">Read our full paper!</a></b>{%endif%}<br><small>*Modern auctions are a special kind of all-pay auction, in which
+    the winner of the auction pays some constant percentage of their bid; they do not pay full gas, as they do not pay for execution, but they must pay for
+    attempted execution.</small>
+</div> 
+
+{% if deanon %}
+<br><h2 style="color:red; text-align:center;">WARNING: THIS IS AN ALPHA VERSION OF THE SITE WITH PRELIMINARY DATA AND KNOWN BUGS.  Use at your own risk and follow <a href="https://twitter.com/ProjectChicago_">@ProjectChicago_</a> for announcements on release and more data being added.</h2>
+{% endif %}

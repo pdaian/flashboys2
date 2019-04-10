@@ -1,0 +1,11 @@
+<div style="text-align: center;">
+<b>Displaying Page {{ page }} of {{ lastpage }}</b><br>
+<div class="pagination">
+  <a href="{{basepath}}/page/1/limit/{{limit}}">&laquo;</a>
+{% for potentialpage in range([1, page-4]|max, [page+5, lastpage+1]|min) %}
+  <a href="{{basepath}}/page/{{potentialpage}}/limit/{{limit}}"{% if potentialpage|int == page|int %}class="active"{%endif%}>{{potentialpage}}</a>
+{% endfor %}
+  <a href="{{basepath}}/page/{{lastpage}}/limit/{{limit}}">&raquo;</a>
+</div>
+<br><small>Viewing {{ limit }} items per page; switch to {% for limit in limits %}<a href="{{basepath}}/page/1/limit/{{limit}}">{{limit}}</a> {%endfor%}</small>
+</div>

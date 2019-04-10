@@ -1,0 +1,27 @@
+\begin{tikzpicture}
+\begin{axis}[cycle list/RdGy-6, clip mode=individual, date coordinates in=x,
+               xticklabel=\month-\shortyear{\year},ymode=log,   xlabel={Date (MM-YY)},     ylabel={%ylabel%},title={%title%},
+ log basis y={10}, ymin=0, ymax=%max%, 
+x label style={
+    at={(0.5,-.07)},
+    anchor=south,
+}, y label style={
+    at={(.03,0)},
+    anchor=west,
+}, title style={at={(0.5,1.06)},anchor=north,},
+ cycle multiindex* list={
+                color list
+                    \nextlist
+                linestyles
+                    \nextlist
+                very thick
+                    \nextlist
+            }, legend pos=%legendpos%,
+            legend entries = {%legendkeys%},legend style={fill=none},legend cell align={right}, %extraaxisoptions%]
+
+
+
+%plots%
+
+\end{axis}
+\end{tikzpicture}

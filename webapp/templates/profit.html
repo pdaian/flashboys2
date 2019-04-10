@@ -1,0 +1,57 @@
+{% include 'header.html' %}
+
+<div id="content">
+<h1> Revenue Breakdown - Detailed </h1>
+
+{% include 'paginate.html' %}
+
+    <div class="limiter" style="margin-top: 20px;">
+        <div class="container-table100">
+            <div class="wrap-table100">
+                <div class="table100">
+                    <table class="profitable">
+                        <thead>
+                            <tr class="table100-head">
+                                <th class="column1">Transaction Hash<br>Sender</th>
+                                <th class="columnprofit">Gas Price (<small>gwei</small>)</th>
+                                <th class="columnprofit">Gas Bid / Paid</th>
+                                <th class="columnprofit">Block/Index Mined/#Logs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in txs %}
+                                <tr>
+                                    <td class="column1">TX #{{ tx['rowid'] }} {{ tx['transaction_hash'] }}<br>From {{ tx['from_address'] }}</td>
+                                    <td class="columnprofit">{{ tx['gas_price']|int / (10 ** 9) }} Gwei Bid </td>
+                                    <td class="columnprofit">{{ tx['gas'] }} of {{ tx['receipt_gas_used'] }} Gas Used <br>[{{ 100 * tx['receipt_gas_used']|float / tx['gas']|float  }}%]</td>
+                                    <td class="columnprofit">Mined Block {{ tx['block_number'] }} @#{{ tx['transaction_index'] }} / {{ tx['num_logs'] }}</td>
+                                </tr>
+                                {% if tx['profit_data'] != None %}
+                                    <tr style="background-color: white; vertical-align: top;">
+                                        <td colspan=1 style="text-align: center;">
+                                        {% if tx['drawn'] %}
+                                            <img src="/static/profit/{{tx['transaction_hash']}}.png" style="padding: 20px 0 20px 0; max-width: 1000px;" />
+                                        {% endif %}
+                                        </td>
+                                        <td style="padding:20px;" colspan=3>{{ graph_parser(tx['profit_graph']) }}<br><br>
+                                        {{ profit_parser(tx['profit_calcs']) }}
+                                        <br><br><h4>Transaction Attributes</h4>
+                                            <ul>
+                                                <li>To contract {{tx['to_address']}}</li>
+                                            </ul><br><br>
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+</div>
+
+{% include 'paginate.html' %}
+<br><br>
+{% include 'footer.html' %}
+

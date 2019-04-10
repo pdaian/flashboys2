@@ -1,0 +1,9 @@
+\begin{axis}[clip mode=individual, date coordinates in=x,
+    xticklabel=\month-\year,ymode=log, xmajorticks=false, y tick style={draw=none}, y tick label style={color=green}, ylabel={\color{green}ETH Price (USD)},
+    log basis y={10}, ymin=0, ymax=2000,y label style={
+    at={(1.25,0.75)},
+    anchor=east,
+}, yticklabel pos=right]
+\addplot[mark=none, green, dashed, line width=2pt] coordinates { %coords% };
+
+\end{axis}

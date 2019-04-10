@@ -1,0 +1,281 @@
+{% include 'header.html' %}
+
+<div id="content">
+
+<h3 style="text-align:center;"><b>Navigation:</b><a href="/">Market Insight</a> | <a href="/revenue">Bot Trades</a>  | <a href="/global"> Global Market Summary</a> | Bot Strategies</h3>
+<br>
+
+<h1> Individual Strategies </h1>
+
+{% for individual in pairwise_data['self_time'].keys()|sort %}
+{% if pairwise_data['self_time'][individual]|length > 50 %}
+<br><br><h3><a id="{{individual}}"></a> <a href="#{{individual}}">{{ individual }}</a> </h3>
+({{pairwise_data['auctions'][individual]|length }} auctions participated / {{  pairwise_data['self_time'][individual]|length }} bids: {% for auction in pairwise_data['auctions'][individual]|sort %} <a href="/auction/{{auction}}">{{ auction }}</a> {% endfor %})
+<div style="width: 100%; overflow: hidden;">
+  <div style="display:inline-block; width: 50%; margin-left: 0; margin-right: 0; margin: 0; float: left;"><div id="individual-price-percent-{{ individual }}"></div><!-- Plotly chart will be drawn inside this DIV --></div>
+  <div id="individual-price-{{ individual }}" style="display: inline-block; width: 50%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+</div>
+  <div id="individual-time-{{ individual }}" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <script>
+var time_deltas = {{ pairwise_data['self_time'][individual] }};
+var price_deltas = {{ pairwise_data['self_price'][individual] }};
+var price_percent_deltas = {{ pairwise_data['self_price_percent'][individual] }};
+
+var time_deltas_others = [{% for pair in pairwise_data['pairs'][individual] %} {{ pairwise_data['pairwise_time'][pair]|join(', ') }}, {% endfor %} ];
+var price_deltas_others = [{% for pair in pairwise_data['pairs'][individual] %} {{ pairwise_data['pairwise_price'][pair]|join(', ') }}, {% endfor %}] ;
+var price_percent_deltas_others = [{% for pair in pairwise_data['pairs'][individual] %} {{ pairwise_data['pairwise_price_percent'][pair]|join(', ') }}, {% endfor %}] ;
+
+var layout_time = {
+  title: 'Individual Strategy - Observed Response Speed',
+  xaxis: {
+    title: 'Observed Time since Previous Bid (s)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Observed Instances (Normed)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  barmode: "overlay"
+};  
+var layout_price = {
+  title: 'Individual Strategy - Price Differences to Response (Positive Only)',
+  xaxis: {
+    title: 'Observed Price Increase Over Last Bid (wei)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Observed Instances (Normed)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  barmode: "overlay"
+};
+var layout_pp = {
+  title: 'Individual Strategy - Price Percentage Differences to Response (Positive Only)',
+  xaxis: {
+    title: 'Observed Percentage Difference to Last Bid',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Observed Instances (Normed)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  barmode: "overlay"
+};
+
+
+var trace_pp = {
+    x:price_percent_deltas,
+    type: 'histogram', histnorm: 'probability',
+    opacity: 0.5,
+    name: 'Against Self',
+  xbins: { 
+    end: 1000, 
+    size: 1.0, 
+    start: 0
+  },
+  };
+var trace_pp_o = {
+    name: 'Against Others',
+    x:price_percent_deltas_others,
+    type: 'histogram', histnorm: 'probability',
+    opacity: 0.5,
+  marker: {
+     color: 'orange',
+  },
+  xbins: { 
+    end: 1000, 
+    size: 1.0, 
+    start: 0
+  },
+  };
+var trace_p = {
+    name: 'Against Self',
+    x:price_deltas,
+    opacity: 0.5,
+    type: 'histogram', histnorm: 'probability',
+  xbins: { 
+    end: 1000000000000.0, 
+    size: 5.0, 
+    start: 0.0
+  },
+  };
+var trace_p_o = {
+    name: 'Against Others',
+    x:price_deltas_others,
+    opacity: 0.5,
+  marker: {
+     color: 'orange',
+  },
+    type: 'histogram', histnorm: 'probability',
+  xbins: { 
+    end: 1000000000000.0, 
+    size: 5.0, 
+    start: 0.0
+  },
+  };
+var trace_t = {
+    name: 'Against Self',
+    x:time_deltas,
+    type: 'histogram', histnorm: 'probability',
+    opacity: 0.5,
+  xbins: { 
+    end: 30.0, 
+    size: 0.05, 
+    start: 0.0
+  },
+  };
+var trace_t_o = {
+    name: 'Against Others',
+    x:time_deltas_others,
+    type: 'histogram', histnorm: 'probability',
+    opacity: 0.5,
+  marker: {
+     color: 'orange',
+  },
+  xbins: { 
+    end: 30.0, 
+    size: 0.05, 
+    start: 0.0
+  },
+  };
+Plotly.newPlot('individual-price-percent-{{ individual }}', [trace_pp, trace_pp_o], layout_pp);
+Plotly.newPlot('individual-price-{{ individual }}', [trace_p, trace_p_o], layout_price);
+Plotly.newPlot('individual-time-{{ individual }}', [trace_t, trace_t_o], layout_time);
+</script>
+{% endif %}
+{% endfor %}
+
+<h1> Pairwise Strategies </h1>
+
+{% for pair in pairwise_data['pairwise_time'].keys()|sort %}
+{% if pairwise_data['pairwise_time'][pair]|length > 50 %}
+<h3> {{ pair }} </h3>
+<div style="width: 100%; overflow: hidden;">
+  <div style="display:inline-block; width: 50%; margin-left: 0; margin-right: 0; margin: 0; float: left;"><div id="pairwise-price-percent-{{ pair }}"></div><!-- Plotly chart will be drawn inside this DIV --></div>
+  <div id="pairwise-price-{{ pair }}" style="display: inline-block; width: 50%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+</div>
+  <div id="pairwise-time-{{ pair }}" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <script>
+var time_deltas = {{ pairwise_data['pairwise_time'][pair] }};
+var price_deltas = {{ pairwise_data['pairwise_price'][pair] }};
+var price_percent_deltas = {{ pairwise_data['pairwise_price_percent'][pair] }};
+var layout_time = {
+  title: 'Pairwise Strategy - Observed Response Speed',
+  xaxis: {
+    title: 'Observed Time since Previous Bid (s)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Observed Instances',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  }
+};
+var layout_price = {
+  title: 'Pairwise Strategy - Price Differences to Response (Positive Only)',
+  xaxis: {
+    title: 'Observed Price Increase Over Last Bid (wei)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Observed Instances',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  }
+};
+var layout_pp = {
+  title: 'Pairwise Strategy - Price Percentage Differences to Response (Positive Only)',
+  xaxis: {
+    title: 'Observed Percentage Difference to Last Bid',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Observed Instances',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  }
+};
+
+
+var trace_pp = {
+    x:price_percent_deltas,
+    type: 'histogram',
+  xbins: { 
+    end: 1000, 
+    size: 1.0, 
+    start: 0
+  },
+  };
+var trace_p = {
+    x:price_deltas,
+    type: 'histogram',
+  xbins: { 
+    size: 100000 
+  },
+  };
+var trace_t = {
+    x:time_deltas,
+    type: 'histogram',
+  xbins: { 
+    end: 10.0, 
+    size: 0.05, 
+    start: 0.0
+  },
+  };
+Plotly.newPlot('pairwise-price-percent-{{ pair }}', [trace_pp], layout_pp);
+Plotly.newPlot('pairwise-price-{{ pair }}', [trace_p], layout_price);
+Plotly.newPlot('pairwise-time-{{ pair }}', [trace_t], layout_time);
+</script>
+{% endif %}
+{% endfor %}
+
+</div>
+
+
+{% include 'footer.html' %}
+

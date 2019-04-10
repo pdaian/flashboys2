@@ -1,0 +1,121 @@
+{% include 'header.html' %}
+
+<div id="content">
+
+<h1> Global / Systemic Summary Statistics - Blocks ?? to ?? </h1>
+
+<div id="gweidiv" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+<div id="gasdiv" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+
+<script>
+var blockstats_success = {{ blockstats_success }};
+var blockstats_wfail = {{ blockstats_wfail }};
+var block_nums_success = blockstats_success.map(x => x[0]);
+var gwei_bid_success = blockstats_success.map(x => x[2]);
+var gwei_used_success = blockstats_success.map(x => x[3]);
+var gas_bid_success = blockstats_success.map(x => x[4]);
+var gas_used_success = blockstats_success.map(x => x[5]);
+var block_nums_wfail = blockstats_wfail.map(x => x[0]);
+var gwei_bid_wfail = blockstats_wfail.map(x => x[2]);
+var gwei_used_wfail = blockstats_wfail.map(x => x[3]);
+var gas_bid_wfail = blockstats_wfail.map(x => x[4]);
+var gas_used_wfail = blockstats_wfail.map(x => x[5]);
+
+var slotbar_gweiused_success = {
+  x: block_nums_success,
+  y: gwei_used_success,
+  type: 'hist',
+  name: 'Gwei Used, Successful Arbitrage'
+}
+var slotbar_gweibid_success = {
+  x: block_nums_success,
+  y: gwei_bid_success,
+  type: 'hist',
+  name: 'Gwei Bid, Successful Arbitrage'
+}
+var slotbar_gasbid_success = {
+  x: block_nums_success,
+  y: gas_bid_success,
+  type: 'hist',
+  name: 'Gas Bid, Successful Arbitrage',
+}
+var slotbar_gasused_success = {
+  x: block_nums_success,
+  y: gas_used_success,
+  type: 'hist',
+  name: 'Gas Used, Successful Arbitrage',
+}
+
+var slotbar_gweiused_wfail = {
+  x: block_nums_wfail,
+  y: gwei_used_wfail,
+  type: 'hist',
+  name: 'Gwei Used, Including Failures'
+}
+var slotbar_gweibid_wfail = {
+  x: block_nums_wfail,
+  y: gwei_bid_wfail,
+  type: 'hist',
+  name: 'Gwei Bid, Including Failures'
+}
+var slotbar_gasbid_wfail = {
+  x: block_nums_wfail,
+  y: gas_bid_wfail,
+  type: 'hist',
+  name: 'Gas Bid, Including Failures',
+}
+var slotbar_gasused_wfail = {
+  x: block_nums_wfail,
+  y: gas_used_wfail,
+  type: 'hist',
+  name: 'Gas Used, Including Failures',
+}
+
+var layout_gwei = {barmode: 'group',  
+  title: 'Gwei of Gas Burned By Arbitrage',
+  yaxis : {
+    title: 'Gwei Consumed (10k block MA)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    },
+    autorange : true,
+  }, xaxis: {
+    title: 'Block Number',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  }
+ };
+
+var layout_gas = {barmode: 'group',  
+  title: 'Gas Consumed by Arbitrage',
+  yaxis : {
+    title: 'Gas Consumed (10k block MA)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    },
+    autorange : true,
+  }, xaxis: {
+    title: 'Block Number',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  }
+ };
+
+
+Plotly.newPlot('gweidiv', [slotbar_gweibid_wfail, slotbar_gweiused_wfail, slotbar_gweibid_success, slotbar_gweiused_success], layout_gwei);
+Plotly.newPlot('gasdiv', [slotbar_gasbid_wfail, slotbar_gasused_wfail, slotbar_gasbid_success, slotbar_gasused_success], layout_gas);
+</script>
+</div>
+
+{% include 'footer.html' %}
+

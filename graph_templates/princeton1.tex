@@ -1,0 +1,51 @@
+\begin{tikzpicture}
+\begin{axis}[
+    ybar stacked,
+    bar width=5pt,
+    ymin=0, ymax=149,
+    legend style={at={(0.5,0)},
+      anchor=south,legend columns=-1},
+          xtick=data,
+        x label style={
+    at={(0.5,-.25)},
+    anchor=south,
+},
+    ylabel={Miner Revenue (ETH)},
+    xlabel={Block Number},
+    title={Highest Observed Pure Revenue OO Blocks},
+    symbolic x coords={%labels%},
+    xtick=data,
+    x tick label style={rotate=90,anchor=east, at={(axis description cs:0.5,-4.1)}},
+      axis y line*=left,
+      axis x line*=bottom
+    ]
+\addplot+[ybar] plot coordinates {%profits%};
+\addplot+[ybar] plot coordinates {%fees%};
+\addplot+[ybar] plot coordinates {%rewards%};
+\legend{\strut OO fees, \strut Transaction fees, \strut Block reward}
+\end{axis}
+
+\begin{axis}[
+    ybar stacked,
+    bar width=5pt,
+    ymin=0, ymax=149,
+    symbolic x coords={%dates%},
+    xlabel={Date of Block (DD-MM-YY)},
+    xtick=data,
+        x label style={
+    at={(0.5,.75)},
+    anchor=south,
+},
+    x tick label style={rotate=90,anchor=east},
+      axis y line*=right,
+      axis x line*=top,
+    ]
+    \addplot+[ybar] plot coordinates {%datespoints%};
+
+\end{axis}
+
+
+\end{tikzpicture}
+
+
+

@@ -1,0 +1,226 @@
+{% include 'header.html' %}
+
+<div id="content">
+
+<h3 style="text-align:center;"><b>Navigation:</b>Market Insight | <a href="/revenue">Bot Trades</a> | <a href="/global"> Global Market Summary</a> | <a href="/strategies"> Bot Strategies</a></h3></b>
+<br><br>
+{% if not hide_global_graphs %}
+<h1> Global Market Overview </h1>
+  <div id="bardiv" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>var data = [];
+var xs = ["10th percentile", "50th percentile", "75th percentile", "90th percentile", "99th percentile"];
+{% for slot in range(slots|length) %}
+var slotbar{{slot}} = {
+  x: xs,
+  y: [{% for item in slots[slot] %} {{ item }}, {% endfor %}],
+  type: 'bar',
+  name: 'Slot {{slot}}'
+};
+data.push(slotbar{{slot}});
+{% endfor %}
+
+var layout = {barmode: 'group',  
+  title: 'Priority Pricing Market for Gas Slots',
+  yaxis : {
+    title: 'Gas Price (gwei)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    },
+    autorange : true,
+  }, xaxis: {
+    title: 'Price percentile (since block ~5M)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  }};
+Plotly.newPlot('bardiv', data, layout);
+</script>
+<br>
+{% endif %}
+<h1> Individual Real-Time Auction Data </h1><br>  
+{% include 'paginate.html' %}
+<div id="globalauctions" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+<script>
+var globalauctions = [];
+{% for auction_id in range(start, end, -1) %}
+
+var time_delta_s_users{{auction_id}} = {}; // dictionaries mapping senders in a particular auction to their bid lists
+var gas_prices_users{{auction_id}} = {};
+var all_senders{{auction_id}} = {}; // keep a list of all senders for iterating later
+{% for bid in auctions[auction_id] %}
+gas_prices_users{{auction_id}}.user{{bid['sender']}} = [];
+time_delta_s_users{{auction_id}}.user{{bid['sender']}} = [];
+all_senders{{auction_id}}.user{{bid['sender']}}  = true;
+{% endfor %}
+{% for bid in auctions[auction_id] %}
+gas_prices_users{{auction_id}}.user{{bid['sender']}}.push({{bid['gas_price'] / (10 ** 9)}});
+time_delta_s_users{{auction_id}}.user{{bid['sender']}}.push({{bid['time_delta'] / (10 ** 9)}});
+{% endfor %}
+
+// per auction statistics / gas prices breakdown
+var gas_prices{{auction_id}} = [{% for bid in auctions[auction_id] %} {{ bid['gas_price'] / (10 ** 9)  }}, {% endfor %}];
+var time_delta_s{{auction_id}} = [{% for bid in auctions[auction_id] %} {{ bid['time_delta'] / (10 ** 9)  }}, {% endfor %}];
+var win_prices{{auction_id}} = [{% for bid in auctions[auction_id] %} {%  if bid['block_number'] != None and (bid['num_logs'] > 0) %} {{ bid['gas_price'] / (10 ** 9)  }}, {% endif %} {% endfor %}];
+var win_delta_s{{auction_id}} = [{% for bid in auctions[auction_id] %} {% if bid['block_number'] != None and (bid['num_logs'] > 0) %} {{ bid['time_delta'] / (10 ** 9)  }}, {% endif %} {% endfor %}];
+var lose_prices{{auction_id}} = [{% for bid in auctions[auction_id] %} {% if bid['block_number'] != None and (not bid['num_logs'] > 0) %} {{ bid['gas_price'] / (10 ** 9)  }}, {% endif %} {% endfor %}];
+var lose_delta_s{{auction_id}} = [{% for bid in auctions[auction_id] %} {% if bid['block_number'] != None and (not bid['num_logs'] > 0) %} {{ bid['time_delta'] / (10 ** 9)  }}, {% endif %} {% endfor %}];
+
+var trace1{{auction_id}} = {
+  x: time_delta_s{{auction_id}},
+  y: gas_prices{{auction_id}},
+  mode: 'lines+markers',
+  type: 'scatter',
+  name: 'Auction #{{auction_id}}'
+};
+
+var trace1win{{auction_id}} = {
+  x: win_delta_s{{auction_id}},
+  y: win_prices{{auction_id}},
+  mode: 'markers',
+  type: 'scatter',
+  name: '#{{auction_id}} Winners',
+  marker: { size: 20, color: 'rgba(10, 130, 10,0.25)' }
+};
+
+var trace1lose{{auction_id}} = {
+  x: lose_delta_s{{auction_id}},
+  y: lose_prices{{auction_id}},
+  mode: 'markers',
+  type: 'scatter',
+  name: '#{{auction_id}} Losers / Payers',
+  marker: { size: 20, color: 'rgba(130, 10, 10,0.25)' }
+};
+
+if (win_delta_s{{auction_id}}.length < 2) {
+globalauctions.push(trace1{{auction_id}});
+globalauctions.push(trace1win{{auction_id}});
+globalauctions.push(trace1lose{{auction_id}});
+}
+var trace2{{auction_id}} = {
+  x: gas_prices{{auction_id}},
+  type: 'histogram'
+};
+
+{% endfor %}
+var layout = {
+  title: 'Consolidated Gas Price Bids over Time: Auctions {{end+1}} to {{start}}',
+  xaxis: {
+    title: 'Observed Time since Auction Start (s)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Gas Price (gwei)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    },
+    type: 'log'
+  }
+};
+{% if not hide_global_graphs %}
+Plotly.newPlot('globalauctions', globalauctions, layout);
+{%endif %}
+</script>
+{% if not hide_global_graphs %}
+<div style="text-align: center">Note: only auctions with a single detected "winner" (mined with 2+ log events) are displayed in this view.  Other auctions may contain multiple sub-auctions, as the split is heuristic.</div>
+{% endif %}
+<br>
+
+{% for auction_id in range(start, end, -1) %}
+
+    <h2 style="padding-top:60px;"> Gas Auction #{{ auction_id }} - {{ auctions[auction_id][0]['date'].strftime('%Y-%m-%d %H:%M:%S') }} to {{ auctions[auction_id][-1]['date'].strftime('%H:%M:%S') }}; Start Time {{ auctions[auction_id][0]['time_seen'] / 10 ** 9 }} </h2>
+
+
+  <div id="auction-{{ auction_id }}" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <div id="auction-hist-{{ auction_id }}" style="width: 90%; margin-left: auto; margin-right: auto;"><!-- Plotly chart will be drawn inside this DIV --></div>
+  <script>
+var user_plots =  [trace1win{{auction_id}}, trace1lose{{auction_id}}];
+
+
+for (var user in all_senders{{auction_id}}) {
+var trace = {
+  x: time_delta_s_users{{auction_id}}[user],
+  y: gas_prices_users{{auction_id}}[user],
+  mode: 'lines+markers',
+  type: 'scatter',
+  name: 'Auction #{{auction_id}} ' + user
+};
+    user_plots.push(trace);
+}
+
+var layout = {
+  title: 'Gas Price Bids over Time',
+  xaxis: {
+    title: 'Observed Time since Auction Start (s)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    }
+  },
+  yaxis: {
+    title: 'Gas Price (gwei)',
+    titlefont: {
+      family: 'Courier New, monospace',
+      size: 18,
+      color: '#7f7f7f'
+    },
+    range: [0, Math.max.apply(Math, gas_prices{{auction_id}}) + 200]
+  }
+};
+Plotly.newPlot('auction-{{ auction_id }}', user_plots, layout);
+//Plotly.newPlot('auction-hist-{{ auction_id }}', [trace2]);
+
+  </script>
+
+    <div class="limiter">
+        <div class="container-table100">
+            <div class="wrap-table100">
+                <div class="table100">
+                    <table>
+                        <thead>
+                            <tr class="table100-head">
+                                <th class="column1">Seconds Elapsed</th>
+                                <th class="column2">Gas Price (<small>gwei</small>)</th>
+                                <th class="column3">Bidder (Sender Address/Nonce)</th>
+                                <th class="column5">Gas Limit</th>
+                                <th class="column6">Transaction Hash</th>
+                                <th class="column7">Gas Paid</th>
+                                <th class="column8">Block/Index Mined</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for bid in auctions[auction_id] %}
+                                <tr>
+                                    <td class="column1">{{ '%.3f' | format(bid['time_delta'] / 10 ** 9) }}</td>
+                                    <td class="column2">{{ '%4.9f' | format(bid['gas_price'] / 10 ** 9) }} ({{ bid['price_percent_delta'] }})</td>
+                                    <td class="column3"><a href="https://etherscan.io/address/{{ bid['sender'] }}"> {{ bid['sender'] }}</a>/<b>{{ bid['account_nonce'] }}</b></td>
+                                    <td class="column5">{{ bid['gas_limit'] }}</td>
+                                    <td class="column6"><small><a href="https://etherscan.io/tx/{{ bid['hash'] }}"> {{ bid['hash'] }}</a></small>{% if bid['drawn'] %}<img style="padding:10px;" src="/static/profit/{{bid['hash']}}.png">{% endif %}</td>
+                                    <td class="column7">{% if bid['block_number'] != None %} {{bid['block_number'] }} {% endif %}</td>
+                                    <td class="column8">{% if bid['block_number'] != None %} {{ bid['block_number'] }} / {{ bid['transaction_index'] }} {% endif %}</td>
+                                </tr>
+                                
+                                {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endfor %}
+{% include 'paginate.html' %}
+
+</div>
+
+{% include 'footer.html' %}
