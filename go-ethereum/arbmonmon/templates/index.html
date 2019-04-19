@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Arbitrage Monitor Monitor</title>
+</head>
+<body>
+    <h3>Yo dawg, I heard you like monitors so I put a monitor on your monitor so you can monitor while you monitor</h3>
+    <table style="width:100%">
+        <tr>
+            <th>Hostname</th>
+            <th>Monitoring IP Address</th>
+            <th>Time Last Checked</th>
+            <th>Sync Status</th>
+            <th>Current Block</th>
+            <th>Highest Block</th>
+            <th>Known States </th>
+            <th>Pulled States</th>
+            <th>Starting Block</th>
+            <th>Percent Synced</th>
+        </tr>
+        {% for statusrow in infolist %}
+            <tr>
+                <th>{{ statusrow[0] }}</th>
+                <th>{{ statusrow[1] }}</th>
+                <th>{{ statusrow[2] }}</th>
+                <th>{{ statusrow[3] }}</th>
+                <th>{{ statusrow[4] }}</th>
+                <th>{{ statusrow[5] }}</th>
+                <th>{{ statusrow[6] }}</th>
+                <th>{{ statusrow[7] }}</th>
+                <th>{{ statusrow[8] }}</th>
+                <th>{{ statusrow[9] }}%</th>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
+

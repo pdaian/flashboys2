@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Monitored Addresses</title>
+<style>
+tr {
+    font-family: monospace, monospace;
+}
+</style>
+</head>
+<body>
+    <h3>Manage Monitored Addresses</h3>
+    <br>
+    <h4>Add to List</h4>
+    <form action="/lolpostsomeaddressses" method="post">
+        <textarea name="updateList" placeholder="One address per line, no quotes or punctuation, prepended by '0x', don't care about checksums or caps - for example, a valid address would be 0xDeADBEEF1337caFEBAbE1337CacAfACe1337C0dE" cols="50" rows="30"></textarea>
+        <input type="submit" value="Submit">
+    </form>
+    <br>
+    <h4>Current List:</h4> 
+    <table style="width:100%">
+        {% for statusrow in outlist %}
+            <tr>
+                <th>{{ statusrow }}</th>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
