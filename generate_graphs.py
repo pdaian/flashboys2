@@ -1,3 +1,6 @@
+
+
+from collections import Counter
 from sqlite_adapter import query_db
 import json
 from datetime import datetime
@@ -95,6 +98,145 @@ def calculate_top(valuesdict, num):
     # return top num keys in valuesdict with highest mapped values
     # used to find top *n* arbitrage bots, exchanges, etc
     return sorted(valuesdict.keys(), key=lambda x : sum(valuesdict[x].values()), reverse=True)[:num]
+
+
+def get_versus_graphs():
+    num_clashes = {}
+    pgas_participated = {}
+    net_profits = {}
+    all_mined_bids = query_db("SELECT block_number,hash,eth_profit,auction_id,from_address,receipt_gas_used,mergedprofitabletxs.gas_price as gas_price FROM mergedprofitabletxs JOIN auctions ON auctions.hash=mergedprofitabletxs.transaction_hash ORDER BY CAST(auction_id as INTEGER) ASC;")
+    auctions = {}
+    first_auction_participated = {}
+    last_auction_participated = {}
+    for bid in all_mined_bids:
+        auction_num = int(bid['auction_id'])
+        if not auction_num in auctions:
+            auctions[auction_num] = []
+        auctions[auction_num].append(bid)
+    historical_states = {}
+    current_state = {} # mapps bidder pairs to (total advantage, )
+    # advantage is defined as the number of advantage by this bidder in auctions where the pair was active, 
+    # where advantage is defined as revenue minus costs (profit) minus competititor's cost
+    for auction_num in range(0, max(auctions.keys()) + 1):
+        if not auction_num in auctions:
+            continue
+        losers = set()
+        winners = set()
+        for bid in auctions[auction_num]:
+            profit = 0.0
+            if bid['eth_profit'] is not None:
+                profit = float(bid['eth_profit'])
+            if profit <= 0:
+                losers.add(bid)
+            else:
+                winners.add(bid)
+
+        #print(auction_num, winners, losers)
+        # we only consider games w 1 winner and 1 loser (2 bot auctions)
+        if len(winners) == 1:
+            winner = list(winners)[0]
+            winner_gas_used = float(winner['receipt_gas_used'])
+            winner_revenue = float(winner['eth_profit'])
+            winner_profit = winner_revenue - ((winner_gas_used * float(winner['gas_price'])) / (10 ** 18))
+
+            # update current_state w results
+            init_dict(current_state, winner['from_address'], 0)
+            current_state[winner['from_address']] += winner_profit
+
+            init_dict(pgas_participated, winner['from_address'], [])
+            pgas_participated[winner['from_address']].append(auction_num)
+            init_dict(net_profits, winner['from_address'], 0)
+            net_profits[winner['from_address']] += winner_profit
+
+            for loser in losers:
+
+                # log pair participation in first/last auction
+                init_dict(first_auction_participated, loser, auction_num)
+                init_dict(first_auction_participated, winner, auction_num)
+                last_auction_participated[winner] = auction_num
+                last_auction_participated[loser] = auction_num
+
+                loser_cost = (float(loser['receipt_gas_used']) * float(loser['gas_price'])) / (10 ** 18)
+                winner_vs = winner['from_address'] + "-" + loser['from_address'] # winning pair
+                loser_vs = loser['from_address'] + "-" + winner['from_address']
+                init_dict(first_auction_participated, loser_vs, auction_num)
+                init_dict(first_auction_participated, winner_vs, auction_num)
+                last_auction_participated[winner_vs] = auction_num
+                last_auction_participated[loser_vs] = auction_num
+
+                init_dict(current_state, winner_vs, 0.0)
+                current_state[winner_vs] += winner_profit
+
+                init_dict(current_state, loser['from_address'], 0.0)
+                current_state[loser['from_address']] -= loser_cost
+
+                init_dict(current_state, loser_vs, 0.0)
+                current_state[loser_vs] -= loser_cost
+
+                canonical_id = sorted([winner_vs, loser_vs])[0]
+                init_dict(num_clashes, canonical_id, 0)
+                num_clashes[canonical_id] += 1  # todo fix this to more accurately track clashes
+
+                init_dict(pgas_participated, loser['from_address'], [])
+                pgas_participated[loser['from_address']].append(auction_num)
+                init_dict(net_profits, loser['from_address'], 0)
+                net_profits[loser['from_address']] -= loser_cost
+
+
+        #print(auction_num, current_state)
+        historical_states[auction_num] = dict(current_state) # make copy of current state for history
+
+    print("Most common pairs:")
+    for k, v in Counter(num_clashes).most_common(1):
+        break
+        opposite_pair = "-".join(reversed(k.split("-")))
+        winner = k.split("-")[0]
+        loser = k.split("-")[1]
+
+        print("auction_num,winner_advantage,loser_advantage,winner_pga_total,loser_pga_total")
+        for auction_num in range(0, auction_num + 1):
+            if not auction_num in historical_states:
+                continue
+            print(auction_num, historical_states[auction_num].get(k, 0), historical_states[auction_num].get(opposite_pair, 0), historical_states[auction_num].get(winner, 0), historical_states[auction_num].get(loser, 0), sep=",")
+
+    print("pair,winner_advantage,loser_advantage,winner_pga_total,loser_pga_total")
+    loser_vectors = []
+    winner_vectors = []
+    for k, v in Counter(num_clashes).most_common(100):
+        opposite_pair = "-".join(reversed(k.split("-")))
+        winner_vector = []
+        loser_vector = []
+        winner = k.split("-")[0]
+        loser = k.split("-")[1]
+        first_vs_auction = min(first_auction_participated[k], first_auction_participated[opposite_pair])
+        last_vs_auction = max(last_auction_participated[k], last_auction_participated[opposite_pair])
+        for auction_num in range(first_vs_auction, last_vs_auction + 1):
+            if not auction_num in historical_states:
+                continue
+            if auction_num in pgas_participated[winner] and auction_num in pgas_participated[loser]:
+                winner_vector.append(historical_states[auction_num].get(k, 0))
+                loser_vector.append(historical_states[auction_num].get(opposite_pair, 0))
+
+        if loser_vector[-1] > winner_vector[-1]:
+            # swap winners/lossers in canonical order
+            loser_vector, winner_vector = winner_vector, loser_vector
+
+        #print(k, historical_states[auction_num].get(k, 0), historical_states[auction_num].get(opposite_pair, 0), historical_states[auction_num].get(winner, 0), historical_states[auction_num].get(loser, 0), sep=",")
+        loser_vectors.append(loser_vector)
+        winner_vectors.append(winner_vector)
+    for auction_index in range(max([len(v) for v in (loser_vectors + winner_vectors)])):
+        if not auction_index in historical_states:
+            continue
+        winner_advantages = []
+        loser_advantages = []
+        for vector in loser_vectors:
+             loser_advantages.append(vector[min(auction_index, len(vector) - 1)])
+        for vector in winner_vectors:
+             winner_advantages.append(vector[min(auction_index, len(vector) - 1)])
+        print(auction_index, np.mean(loser_advantages), np.mean(winner_advantages), sep=",")
+
+    #for address in pgas_participated:
+    #    print(address, len(pgas_participated[address]),net_profits[address]/len(pgas_participated[address]), net_profits[address], max(pgas_participated[address])-min(pgas_participated[address]), sep=",")
 
 def get_breadth_graphs_tikz(graphs_to_generate, skip_until='2017-09-01'):
     prices = {}
@@ -355,6 +497,10 @@ def get_pga_dynamics_graphs():
         min_bid_ratios_file.write(str(bid) + "\n")
 
 if __name__ == "__main__":
+
+    get_versus_graphs()
+    exit(1)
+
     get_breadth_graphs_tikz(["pure_revenue_gas_numtrades"], skip_until=None)
     get_breadth_graphs_tikz(["pure_revenue_eth", "pure_revenue_usd", "pure_revenue_botmas"], skip_until=None)
     get_breadth_graphs_tikz(["pure_revenue_exch"], skip_until="2018-04-01")

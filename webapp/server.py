@@ -1,7 +1,7 @@
 from sqlite_adapter import *
 import os, sys
 import datetime, json, random
-from flask import Flask, render_template, request, g, Markup
+from flask import Flask, render_template, request, g, Markup, redirect
 app = Flask(__name__)
 
 DEFAULT_AUCTIONS_LIMIT = 20
@@ -85,6 +85,10 @@ def parse_profits(profit_data):
     return Markup(profitstr)
 
 # END SQLITE UTILITY FUNCTIONS
+
+@app.route('/data')
+def data():
+    return redirect('http://3.18.224.101/66f62d18/')
 
 @app.route('/global')
 def global_stats():

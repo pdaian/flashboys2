@@ -30,7 +30,7 @@ for auction_num in auctions:
         auctions_participated[sender].add(auction_num)
         bid['gas_price'] = int(bid['gas_price'])
         bid['time_seen'] = int(bid['time_seen'])
-        if last_bid is not None:
+        if last_bid is not None and last_bid['gas_price'] != 0:
             counterbidder = last_bid['sender']
             price_delta = bid['gas_price'] - last_bid['gas_price']
             price_percent_delta = (price_delta / (float(bid['gas_price'] + last_bid['gas_price'])/2)) * 100
@@ -49,7 +49,7 @@ for auction_num in auctions:
             pairwise_price_percent_deltas[bidder_pairs].append(price_percent_delta)
             pairs[sender].add(bidder_pairs)
 
-        if sender in last_bids_by_id:
+        if sender in last_bids_by_id and last_bids_by_id[sender]['gas_price'] != 0:
             last_self_bid = last_bids_by_id[sender]
             price_delta = bid['gas_price'] - last_self_bid['gas_price']
             time_delta = (bid['time_seen'] - last_self_bid['time_seen']) / (10 ** 9)

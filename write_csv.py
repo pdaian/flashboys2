@@ -10,13 +10,13 @@ def get_last_line():
 
 FIELDS_TO_GRAB = 'hash,monitor_ip,sender,time_seen,payload,gas_price,gas_limit,amount,peer_name,account_nonce,id'
 
-conn = psycopg2.connect("postgres://tkell:d8HqKH;2~>~=@arbitrage3.ck0rrdngnqmh.us-west-2.rds.amazonaws.com/arbitrage?sslmode=verify-full")
+conn = psycopg2.connect("postgres://readonly:NZOTyC4cttjvNdAKY@arbitrage3.ck0rrdngnqmh.us-west-2.rds.amazonaws.com/arbitrage?sslmode=verify-full")
 cur = conn.cursor()
 print(time.time())
 
 grab_from = get_last_line()
 print("[database fetcher] Grabbing starting at id " + grab_from)
-cur.execute("SELECT " + FIELDS_TO_GRAB + " FROM arbitrage WHERE id > " + get_last_line() +  " ;")
+cur.execute("SELECT " + FIELDS_TO_GRAB + " FROM arbitrage WHERE id > " + grab_from +  " AND id < " + str(int(grab_from) + 1000000) + ";")
 print(time.time())
 
 with open('arbitrage_data.csv', 'a') as csvfile:

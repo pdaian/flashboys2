@@ -19,8 +19,7 @@ while True:
     os.system("wget https://coinmetrics.io/data/eth.csv -O data/eth.csv")
     os.system("python3 calculate_profit_from_logs.py")
     os.system("python3 csv_to_sqlite.py")
-    exit(1)
 
     print(time.time())
 
-    time.sleep(60 * 60)
+    time.sleep(300 * 60)

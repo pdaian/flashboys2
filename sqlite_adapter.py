@@ -1,6 +1,6 @@
 import sqlite3
 
-DATABASE = '../data/arbitrage.db'
+DATABASE = 'data/arbitrage.db'
 
 db = sqlite3.connect(DATABASE)
 db.row_factory = sqlite3.Row
