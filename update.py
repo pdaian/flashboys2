@@ -16,7 +16,7 @@ while True:
     os.system("python3 get_bq_fees.py")
     os.system("python3 get_bq_summarystats.py") # todo fix argv error
     os.system("rm -rf data/eth.csv")
-    os.system("wget https://coinmetrics.io/data/eth.csv -O data/eth.csv")
+    os.system("wget https://coinmetrics.io/newdata/eth.csv -O data/eth.csv")
     os.system("python3 calculate_profit_from_logs.py")
     os.system("python3 csv_to_sqlite.py")
 

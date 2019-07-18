@@ -133,7 +133,7 @@ def get_versus_graphs():
 
         #print(auction_num, winners, losers)
         # we only consider games w 1 winner and 1 loser (2 bot auctions)
-        if len(winners) == 1:
+        if len(winners) == 1 and len(losers) == 1:
             winner = list(winners)[0]
             winner_gas_used = float(winner['receipt_gas_used'])
             winner_revenue = float(winner['eth_profit'])
@@ -199,44 +199,65 @@ def get_versus_graphs():
                 continue
             print(auction_num, historical_states[auction_num].get(k, 0), historical_states[auction_num].get(opposite_pair, 0), historical_states[auction_num].get(winner, 0), historical_states[auction_num].get(loser, 0), sep=",")
 
-    print("pair,winner_advantage,loser_advantage,winner_pga_total,loser_pga_total")
-    loser_vectors = []
-    winner_vectors = []
-    for k, v in Counter(num_clashes).most_common(100):
-        opposite_pair = "-".join(reversed(k.split("-")))
-        winner_vector = []
-        loser_vector = []
-        winner = k.split("-")[0]
-        loser = k.split("-")[1]
-        first_vs_auction = min(first_auction_participated[k], first_auction_participated[opposite_pair])
-        last_vs_auction = max(last_auction_participated[k], last_auction_participated[opposite_pair])
-        for auction_num in range(first_vs_auction, last_vs_auction + 1):
-            if not auction_num in historical_states:
+    for num_bots in [5,20,50,100]:
+        output_handle = open('reports/versus_%d.csv' % num_bots, 'w')
+        output_handle.write("auctions_elapsed_%d,loser_versus_%d,winner_versus_%d,loser_net_%d,winner_net_%d\n" % tuple([num_bots] * 5))
+        loser_versus_vectors = []
+        winner_versus_vectors = []
+        loser_overall_vectors = []
+        winner_overall_vectors = []
+        for k, v in Counter(num_clashes).most_common(num_bots):
+            opposite_pair = "-".join(reversed(k.split("-")))
+            winner_versus_vector = []
+            loser_versus_vector = []
+            winner_overall_vector = []
+            loser_overall_vector = []
+            winner = k.split("-")[0]
+            loser = k.split("-")[1]
+            first_vs_auction = min(first_auction_participated[k], first_auction_participated[opposite_pair])
+            last_vs_auction = max(last_auction_participated[k], last_auction_participated[opposite_pair])
+            for auction_num in range(first_vs_auction, last_vs_auction + 1):
+                if not auction_num in historical_states:
+                    continue
+                if auction_num in pgas_participated[winner] and auction_num in pgas_participated[loser]:
+                    winner_versus_vector.append(historical_states[auction_num].get(k, 0))
+                    loser_versus_vector.append(historical_states[auction_num].get(opposite_pair, 0))
+                if auction_num in pgas_participated[winner]:
+                    winner_overall_vector.append(historical_states[auction_num].get(winner, 0))
+                if auction_num in pgas_participated[loser]:
+                    loser_overall_vector.append(historical_states[auction_num].get(loser, 0))
+
+            if loser_versus_vector[-1] > winner_versus_vector[-1]:
+                # swap winners/lossers in canonical order
+                loser_versus_vector, winner_versus_vector = winner_versus_vector, loser_versus_vector
+                loser_overall_vector, winner_overall_vector = winner_overall_vector, loser_overall_vector
+
+            #print(k, historical_states[auction_num].get(k, 0), historical_states[auction_num].get(opposite_pair, 0), historical_states[auction_num].get(winner, 0), historical_states[auction_num].get(loser, 0), sep=",")
+            loser_versus_vectors.append(loser_versus_vector)
+            winner_versus_vectors.append(winner_versus_vector)
+            loser_overall_vectors.append(loser_overall_vector)
+            winner_overall_vectors.append(winner_overall_vector)
+ 
+        for auction_index in range(max([len(v) for v in (loser_versus_vectors + winner_versus_vectors + loser_overall_vectors + winner_overall_vectors)])):
+            if not auction_index in historical_states:
                 continue
-            if auction_num in pgas_participated[winner] and auction_num in pgas_participated[loser]:
-                winner_vector.append(historical_states[auction_num].get(k, 0))
-                loser_vector.append(historical_states[auction_num].get(opposite_pair, 0))
-
-        if loser_vector[-1] > winner_vector[-1]:
-            # swap winners/lossers in canonical order
-            loser_vector, winner_vector = winner_vector, loser_vector
-
-        #print(k, historical_states[auction_num].get(k, 0), historical_states[auction_num].get(opposite_pair, 0), historical_states[auction_num].get(winner, 0), historical_states[auction_num].get(loser, 0), sep=",")
-        loser_vectors.append(loser_vector)
-        winner_vectors.append(winner_vector)
-    for auction_index in range(max([len(v) for v in (loser_vectors + winner_vectors)])):
-        if not auction_index in historical_states:
-            continue
-        winner_advantages = []
-        loser_advantages = []
-        for vector in loser_vectors:
-             loser_advantages.append(vector[min(auction_index, len(vector) - 1)])
-        for vector in winner_vectors:
-             winner_advantages.append(vector[min(auction_index, len(vector) - 1)])
-        print(auction_index, np.mean(loser_advantages), np.mean(winner_advantages), sep=",")
-
+            winner_versus_advantages = []
+            loser_versus_advantages = []
+            winner_overall_advantages = []
+            loser_overall_advantages = []
+            for vector in loser_versus_vectors:
+                loser_versus_advantages.append(vector[min(auction_index, len(vector) - 1)])
+            for vector in winner_versus_vectors:
+                winner_versus_advantages.append(vector[min(auction_index, len(vector) - 1)])
+            for vector in loser_overall_vectors:
+                loser_overall_advantages.append(vector[min(auction_index, len(vector) - 1)])
+            for vector in winner_overall_vectors:
+                winner_overall_advantages.append(vector[min(auction_index, len(vector) - 1)])
+            output_handle.write(",".join([str(x) for x in [auction_index, np.mean(loser_versus_advantages), np.mean(winner_versus_advantages), np.mean(loser_overall_advantages), np.mean(winner_overall_advantages)]]) + "\n")
+    print("Done with versus graphs")
     #for address in pgas_participated:
     #    print(address, len(pgas_participated[address]),net_profits[address]/len(pgas_participated[address]), net_profits[address], max(pgas_participated[address])-min(pgas_participated[address]), sep=",")
+
 
 def get_breadth_graphs_tikz(graphs_to_generate, skip_until='2017-09-01'):
     prices = {}
