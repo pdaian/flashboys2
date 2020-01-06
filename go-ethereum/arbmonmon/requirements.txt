@@ -32,5 +32,5 @@ ssh-import-id==5.5
 ufw==0.35
 unattended-upgrades==0.1
 urllib3==1.13.1
-waitress==1.1.0
+waitress==1.4.2
 Werkzeug==0.14.1
