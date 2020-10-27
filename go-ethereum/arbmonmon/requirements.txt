@@ -4,7 +4,7 @@ click==6.7
 cloud-init==18.2
 command-not-found==0.3
 configobj==5.0.6
-cryptography==1.2.3
+cryptography==3.2
 Flask==1.0.2
 Flask-BasicAuth==0.2.0
 hibagent==1.0.1
